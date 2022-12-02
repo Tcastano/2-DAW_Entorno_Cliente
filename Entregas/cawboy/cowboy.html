@@ -27,7 +27,7 @@
     //obstaculos
     const COLORFONDO = "rgb(56, 28, 0,0.75)";
     const COLORFONDOATENUADO = "rgb(56, 28, 0,0.3)";
-    const NUMERODEOBSTACULOS = 15;
+    let numeroObstaculos;
     const ALTURAOBSTACULOS = 10;
     const ANCHOOBSTACULOS = 10;
     const GAP = 200;
@@ -62,13 +62,23 @@
 
     };
     //funcion empezar juego el cual llama a las funciones de crear el html y despues el addeventListener de leer tecla
+    //aparte se muestra un alert para que el usuario introduzca el numero de obstaculos que quiere
+
     function EmpezarJuego() {
       CrearHTML();
       document.addEventListener("keydown", LeerTecla);
     }
+    
+    function NumeroObstaculos() {
+      do {
+        numeroObstaculos= prompt('Introducir el numero de obstaculos 1-18','Numero de obstaculos');
+        
+      } while (numeroObstaculos>18 ||numeroObstaculos<1);
+    }
     //Funcion crea y da estilo a dos los elementos
     //Ademas de la declaracion del array bidimensional para guardar los obstaculos
     function CrearHTML() {
+      NumeroObstaculos()
       Titulo();
       CrearDivContenedor();
       CrearHora();
@@ -184,13 +194,13 @@
     // La poscion del objeto de arriba esta definida pr la altura de la pantalla y la posicion del objeto de abajo esta dado por la altura del 
     //objeto de arriba y le gap
     function CrearObstaculosarray() {
-      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+      for (let index = 0; index < numeroObstaculos; index++) {
         let obstaculoSuperior = new Obstaculo();
         let obstaculoInferior = new Obstaculo();
 
         let alturaobjeto = parseInt((Math.random() * altoDiv - 100).toFixed(0));
         let posicionObjetos =
-          (index + 1) * ((anchoDiv - GAP) / NUMERODEOBSTACULOS);
+          (index + 1) * ((anchoDiv - GAP) / numeroObstaculos);
 
         obstaculoSuperior.setaltura(alturaobjeto);
         obstaculoSuperior.posicionX = posicionObjetos;
@@ -210,7 +220,7 @@
     function CrearObstaculos() {
       CrearObstaculosarray();
       //bucle for
-      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+      for (let index = 0; index < numeroObstaculos; index++) {
         //Objetos de cada posicion de cada array 
         let obstaculoSuperior = arrayObstaculos[0][index];
         let obstaculoInferior = arrayObstaculos[1][index];
@@ -267,7 +277,7 @@
             Mover();
             ComprobarChoque();
             ActualizarHora();
-          }, VELOCIDAD);
+          }, VELOCIDAD); 
           arrancado = true;
           t1 = new Date();
         }
@@ -311,7 +321,7 @@
         }
       }
     }
-    //funcion que crea el dic div de la casilla final y le da estilo colocandolo en la parte de abajo a la derecha de la pantalla
+    //funcion que crea el div de la casilla final y le da estilo colocandolo en la parte de abajo a la derecha de la pantalla
     function CasillaFinal() {
       let casillaFinal = document.createElement("div");
       casillaFinal.setAttribute("Id", "casillafinal");
@@ -333,7 +343,7 @@
     //y poder comprarlos con los del cowboy 
     //si esto sucede se pone el choque a true y despues si el choque es igual a true lo que se hace es llamar a la funcion FinalizarPartida
     function ComprobarChoque() {
-      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+      for (let index = 0; index < numeroObstaculos; index++) {
         let ObjetoSuperior = arrayObstaculos[0][index];
 
         let alturaObjeto = ObjetoSuperior.getaltura();
@@ -404,7 +414,7 @@
     }
     //funcion que le da opacidad a los objetos al ser llamada la funcion
     function ObjetosInvisibles() {
-      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+      for (let index = 0; index < numeroObstaculos; index++) {
         let obstaculoSuperior = arrayObstaculos[0][index];
         let obstaculoInferior = arrayObstaculos[1][index];
 
@@ -467,7 +477,7 @@
     <div id="contenedorDiv">
       <div id="empezar">
         <h1 id="titulo">JUEGO DEL COWBOY</h1>
-        <button id="boton">EmpezarJuego</button>
+        <button id="boton">Empezar Juego</button>
       </div>
       <p id="ParrafoHora"></p>
     </div>
