@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <script>
+    //atributos bola
+    const COWBOYALTURA = 40;
+    const COWBOYANCHO = 40;
+    const COWBOYPOSICIONLEFT = "20px";
+    const COWBOYPOSICIONTOP = "20px";
+    let cowboyId;
+
+    //atributos fondo
+    let altoDiv;
+    const BORDEPANTALLA = 20;
+
+    //teclas movimiento
+    const LEFT = 37;
+    const UP = 38;
+    const RIGHT = 39;
+    const DOWN = 40;
+
+    //obstaculos
+    const COLORFONDO = "rgb(56, 28, 0,0.75)";
+    const COLORFONDOATENUADO = "rgb(56, 28, 0,0.3)";
+    const NUMERODEOBSTACULOS = 15;
+    const ALTURAOBSTACULOS = 10;
+    const ANCHOOBSTACULOS = 10;
+    const GAP = 200;
+    let arrayObstaculos = [];
+
+    //Variables y cosntantes asiciadas al movimiento
+    const TAMANOMOVIMIENTO = 1;
+    const VELOCIDAD = 5;
+    let arrancado = false;
+    let idInterval;
+    let choque = false;
+
+    //alto y ancho de la Casilla final
+    const ALTURACASILLAFINAL = 60;
+    const ANCHOCASILLAFINAL = 150;
+
+    //variables asingadas a las id de los elementos html
+    let idCasillafinal;
+    let CasillaFinalX;
+    let CasillafinalY;
+    let ContadorMovimientos=0;;
+
+    // tiempo de inicio de la partida
+    let t1;
+    let parrafoSegundos;
+    let parrafoHora;
+
+    //elemento onload el cual llama a la funcion empezar juego cuando haces click en el boton de inicio
+    this.onload = () => {
+
+      document.getElementById("boton").addEventListener("click", EmpezarJuego);
+
+    };
+    //funcion empezar juego el cual llama a las funciones de crear el html y despues el addeventListener de leer tecla
+    function EmpezarJuego() {
+      CrearHTML();
+      document.addEventListener("keydown", LeerTecla);
+    }
+    //Funcion crea y da estilo a dos los elementos
+    //Ademas de la declaracion del array bidimensional para guardar los obstaculos
+    function CrearHTML() {
+      Titulo();
+      CrearDivContenedor();
+      CrearHora();
+      arrayObstaculos[0] = new Array();
+      arrayObstaculos[1] = new Array();
+      CrearObstaculos();
+      CasillaFinal();
+      CrearCowboy();
+    }
+    //clase Cowboy Se le asigna todos los valores necesarios para la posicion y el tamaño
+    class Cowboy {
+      constructor() {
+        this.altura = COWBOYALTURA;
+        this.ancho = COWBOYANCHO;
+        this.posicionTop = COWBOYPOSICIONTOP;
+        this.posicionLeft = COWBOYPOSICIONLEFT;
+      }
+    }
+    //Clase obstaculo  Se le asigna todos los valores necesarios para la posicion y el tamaño
+    class Obstaculo {
+      constructor(posX, posY, alturaobstaculo) {
+        this.posicionX = posX;
+        this.posicionY = posY;
+        this.altura = alturaobstaculo;
+        this.ancho = ANCHOOBSTACULOS;
+      }
+
+      getaltura() {
+        return this.altura;
+      }
+
+      setaltura(alturaobstaculo) {
+        this.altura = alturaobstaculo;
+      }
+
+      getancho() {
+        return this.ancho;
+      }
+
+      setancho(anchoobstaculo) {
+        this.ancho = anchoobstaculo;
+      }
+
+      getPosicionX() {
+        return this.posicionX;
+      }
+
+      setPosicionX(posX) {
+        this.posicionX = posicionX;
+      }
+
+      getPosicionY() {
+        return this.posicionY;
+      }
+
+      setPosicionY(posdY) {
+        this.posicionY = posicionY;
+      }
+    }
+    //funcion que atenua el titulo y borra el botn al dar al boton
+    function Titulo() {
+      document.getElementById("boton").remove();
+      document.getElementById("titulo").style.color = " rgb(255, 70, 50,0.3)";
+    }
+    //funcion que crea el div del cowboy y le da estilo
+    function CrearCowboy() {
+      //crear el objeto cowboy y el div que lo contiene
+      let cowboy = new Cowboy();
+      let player = document.createElement("div");
+      player.setAttribute("Id", "player");
+
+      //Atributos del div
+      player.style.width = cowboy.altura + "px";
+      player.style.height = cowboy.ancho + "px";
+      player.style.borderRadius = "50%";
+      player.style.backgroundColor = "#058276";
+      player.style.position = "absolute";
+      player.style.backgroundImage = "url('cowboypx.png')";
+      player.style.backgroundRepeat = "No-Repeat";
+      let widthDivContenedor =
+        document.getElementById("contenedorDiv").clientWidth;
+      let heigtDivContenedor =
+        document.getElementById("contenedorDiv").clientHeight;
+      player.style.top = cowboy.posicionTop;
+      player.style.left = cowboy.posicionLeft;
+
+      //se le asigna a la pantalla el div
+      document.getElementById("contenedorDiv").appendChild(player);
+
+      cowboyId = document.getElementById("player");
+    }
+    //funcion que crea el div de juego con sus estilos y tamaño
+    function CrearDivContenedor() {
+      div = document.getElementById("contenedorDiv");
+
+      anchoDiv = window.innerWidth - BORDEPANTALLA;
+      altoDiv = window.innerHeight - BORDEPANTALLA;
+
+      div.style.width = anchoDiv + "px";
+      div.style.height = altoDiv + "px";
+      div.style.backgroundColor = COLORFONDO;
+      div.style.backgroundImage = "url('fondo.jpg')";
+      div.style.backgroundSize = "100%";
+
+      div.style.color = "white";
+      div.style.textAlign = "right";
+      //document.body.appendChild(div);
+    }
+    //funcion que los objetos obstaculos y los asigna auna posicion del array
+    //Los objetos se le asigna la altura de manera aleatoria
+    // La altura del objeto de abajo se hace cogiendo la diferencia de la altura de la pantalla restandole el alto del objeto de arriba 
+    // y el gap entre objetos.
+    // La poscion del objeto de arriba esta definida pr la altura de la pantalla y la posicion del objeto de abajo esta dado por la altura del 
+    //objeto de arriba y le gap
+    function CrearObstaculosarray() {
+      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+        let obstaculoSuperior = new Obstaculo();
+        let obstaculoInferior = new Obstaculo();
+
+        let alturaobjeto = parseInt((Math.random() * altoDiv - 100).toFixed(0));
+        let posicionObjetos =
+          (index + 1) * ((anchoDiv - GAP) / NUMERODEOBSTACULOS);
+
+        obstaculoSuperior.setaltura(alturaobjeto);
+        obstaculoSuperior.posicionX = posicionObjetos;
+        obstaculoSuperior.posicionY = 8;
+
+        obstaculoInferior.setaltura(altoDiv - alturaobjeto - GAP);
+        obstaculoInferior.posicionX = posicionObjetos;
+        obstaculoInferior.posicionY = alturaobjeto + 8 + GAP;
+
+        arrayObstaculos[0].push(obstaculoSuperior);
+        arrayObstaculos[1].push(obstaculoInferior);
+      }
+      return arrayObstaculos;
+    }
+    //Funcion que llama a la funcion de crear los obstaculos y 
+    //recorre el array resultante para crear un div por cada objeto y poder darle estilos
+    function CrearObstaculos() {
+      CrearObstaculosarray();
+      //bucle for
+      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+        //Objetos de cada posicion de cada array 
+        let obstaculoSuperior = arrayObstaculos[0][index];
+        let obstaculoInferior = arrayObstaculos[1][index];
+        //Estilo de cada div del objeto superior
+        let parrafoSuperior = document.createElement("div");
+
+        parrafoSuperior.setAttribute("id", "pSuperior" + index);
+
+        parrafoSuperior.style.width = ANCHOOBSTACULOS + "px";
+        parrafoSuperior.style.height = obstaculoSuperior.getaltura() + "px";
+        parrafoSuperior.style.backgroundColor = COLORFONDO;
+
+        parrafoSuperior.style.position = "absolute";
+        parrafoSuperior.style.top = obstaculoSuperior.getPosicionY() + "px";
+        parrafoSuperior.style.left = obstaculoSuperior.getPosicionX() + "px";
+
+        document.getElementById("contenedorDiv").appendChild(parrafoSuperior);
+        //Estilo de cada objeto inferior
+        let parrafoInferior = document.createElement("div");
+        parrafoInferior.setAttribute("id", "pinferior" + index);
+
+        parrafoInferior.style.width = ANCHOOBSTACULOS + "px";
+        parrafoInferior.style.height = obstaculoInferior.getaltura() + "px";
+        parrafoInferior.style.backgroundColor = COLORFONDO;
+
+        parrafoInferior.style.position = "absolute";
+        parrafoInferior.style.top = obstaculoInferior.getPosicionY() + "px";
+        parrafoInferior.style.left = obstaculoInferior.getPosicionX() + "px";
+
+        document.getElementById("contenedorDiv").appendChild(parrafoInferior);
+      }
+    }
+    //funcion que lee el valor retornad por la tecla pulsada 
+    //si la tecla pulsada es una de las flechas Lo que hace es retornar el valor de esta y
+    //llamar a la funcion mover la cual esta dentro de un interval el cual se inicia cuando pulsas una tecla de estas
+    //EN esta funcion tambien se crea la hra de inicio de partida
+    //tambien se hace llamada a la funcion de mostrar hora la cual muestra la hor en la parte superior derecha de la pantalla
+    //Tambien se llama a la funcion comprobarChoque para comprar posiciones del CowBOy y de los obstaculos y de la casilla final
+    //Se le asigna una 
+    function LeerTecla(valorLeidoTeclado) {
+      if (
+        valorLeidoTeclado.keyCode == LEFT ||
+        valorLeidoTeclado.keyCode == UP ||
+        valorLeidoTeclado.keyCode == RIGHT ||
+        valorLeidoTeclado.keyCode == DOWN
+      ) {
+        direction = valorLeidoTeclado.keyCode;
+        ContadorMovimientos++;
+        Mover();
+        ComprobarChoque();
+        // arrancamos el setInterval, solamente la primera vez
+        if (!arrancado) {
+          idInterval = setInterval(() => {
+            Mover();
+            ComprobarChoque();
+            ActualizarHora();
+          }, VELOCIDAD);
+          arrancado = true;
+          t1 = new Date();
+        }
+      }
+    }
+    //funcion mover la cual recoge la posicion de la bola comprueba que esta entre los margenes de la pantalla 
+    //Ademas comprueba de primera que este dentro de la pantalla de juego
+    function Mover() {
+      let posicionX = cowboyId.offsetLeft;
+      let posicionY = cowboyId.offsetTop;
+
+      let anchoBola = COWBOYALTURA;
+      let altoBola = COWBOYALTURA;
+      // Comprobamos si nos salimos por los limites de la pantalla (div)
+      // Si se encuentra fuera de los limites ejecuata funcion de finalizar partida
+      if (
+        posicionX + COWBOYALTURA > anchoDiv ||
+        posicionX < 0 ||
+        posicionY + COWBOYALTURA > altoDiv ||
+        posicionY < 0
+      ) {
+        FinalizarPartida();
+      }
+      // Sino nos movemos en la dirección que dice el usuario
+      else {
+        switch (direction) {
+          case LEFT:
+            cowboyId.style.left = cowboyId.offsetLeft - TAMANOMOVIMIENTO + "px";
+            break;
+          case UP:
+            cowboyId.style.top = cowboyId.offsetTop - TAMANOMOVIMIENTO + "px";
+            break;
+          case RIGHT:
+            cowboyId.style.left = cowboyId.offsetLeft + TAMANOMOVIMIENTO + "px";
+            break;
+          case DOWN:
+            cowboyId.style.top = cowboyId.offsetTop + TAMANOMOVIMIENTO + "px";
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    //funcion que crea el dic div de la casilla final y le da estilo colocandolo en la parte de abajo a la derecha de la pantalla
+    function CasillaFinal() {
+      let casillaFinal = document.createElement("div");
+      casillaFinal.setAttribute("Id", "casillafinal");
+      document.getElementById("contenedorDiv").appendChild(casillaFinal);
+      idCasillafinal = document.getElementById("casillafinal");
+      idCasillafinal.style.width = ANCHOCASILLAFINAL + "px";
+      idCasillafinal.style.height = ALTURACASILLAFINAL + "px";
+      idCasillafinal.style.backgroundColor = "#93FF00";
+      idCasillafinal.style.position = "absolute";
+      idCasillafinal.innerHTML = "FIN del JUEGO";
+      idCasillafinal.style.textAlign = "center";
+      CasillaFinalX = altoDiv - 65;
+      CasillafinalY = anchoDiv - 150;
+      idCasillafinal.style.top = CasillaFinalX + "px";
+      idCasillafinal.style.left = CasillafinalY + "px";
+    }
+    //funcion que comprueba el choque de la bla con los diferentes  obstaculos 
+    //Si Primero recorre el array para recoger las posiciones de los obstculos 
+    //y poder comprarlos con los del cowboy 
+    //si esto sucede se pone el choque a true y despues si el choque es igual a true lo que se hace es llamar a la funcion FinalizarPartida
+    function ComprobarChoque() {
+      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+        let ObjetoSuperior = arrayObstaculos[0][index];
+
+        let alturaObjeto = ObjetoSuperior.getaltura();
+
+        let idS = "pSuperior" + index;
+        let idObstaculoSuperior = document.getElementById(idS);
+
+        let idI = "pinferior" + index;
+        let idObstaculoInferior = document.getElementById(idI);
+        let posicionSuperiorX = idObstaculoSuperior.offsetLeft;
+        let posicionSuperiorY = alturaObjeto + 8;
+
+        let posicionInferiorX = idObstaculoInferior.offsetLeft;
+        let posicionInferiorY = idObstaculoInferior.offsetTop;
+
+        let posicionCowboyX = cowboyId.offsetLeft;
+        let posicionCowboyY = cowboyId.offsetTop;
+
+        let posicionCasillaX = idCasillafinal.offsetLeft;
+        let posicionCasillaY = idCasillafinal.offsetTop;
+
+        if ((posicionCowboyX > posicionSuperiorX - COWBOYANCHO &&
+            posicionCowboyX < posicionSuperiorX + ANCHOOBSTACULOS &&
+            posicionCowboyY < posicionSuperiorY) ||
+            (posicionCowboyX > posicionInferiorX - COWBOYANCHO &&
+            posicionCowboyX < posicionInferiorX + ANCHOOBSTACULOS &&
+            posicionCowboyY > posicionSuperiorY + GAP - COWBOYALTURA) ||
+            (posicionCowboyX > posicionCasillaX - COWBOYANCHO &&
+            posicionCowboyX < posicionCasillaX + ANCHOCASILLAFINAL &&
+            posicionCowboyY - (1 / 10) * COWBOYALTURA <
+            posicionCasillaY + COWBOYALTURA &&
+            posicionCowboyY - 1.5 * COWBOYALTURA >
+            posicionCasillaY - ALTURACASILLAFINAL)
+        ) {
+          choque = true;
+        }
+      }
+      if (choque == true) {
+        FinalizarPartida();
+      }
+    }
+    
+    //Funcion finalizarPartida la cual para el intervalo de movimiento
+    //Crear el tiempo de juego final y muestra el numero de movimientos hechos durante la partida
+    //Ademas llama a la funcion RemoveListener la cual deja de leer la teclas
+    //ademas se llama a la funcion que le da estilo a los elementos para atenuar el color
+    function FinalizarPartida() {
+      clearInterval(idInterval);
+      CrearParrafoFinJuego();
+      ObjetosInvisibles();
+      RemoveListener();
+    }
+    //Crea una hora cuando se finaliza el juego y se resta a la hora de inicio 
+    //para mostrarla al finalizar
+    //se le da estilo al parrafo
+    function CrearParrafoFinJuego() {
+      let t2 = new Date();
+      let segundos = Math.round((t2.getTime() - t1.getTime()) / 1000);
+      let parrafo = document.createElement("p");
+      parrafo.innerText =
+        "La partida ha finalizado con " + segundos + " segundos de duración. \nHas hecho "+ContadorMovimientos+" movimientos";
+
+      parrafo.style.fontSize = "25px";
+      parrafo.style.fontWeight = "bold";
+      parrafo.style.color = "rgb(255, 0, 0) ";
+      parrafo.style.textAlign = "center";
+      document.getElementById("contenedorDiv").appendChild(parrafo);
+    }
+    //funcion que le da opacidad a los objetos al ser llamada la funcion
+    function ObjetosInvisibles() {
+      for (let index = 0; index < NUMERODEOBSTACULOS; index++) {
+        let obstaculoSuperior = arrayObstaculos[0][index];
+        let obstaculoInferior = arrayObstaculos[1][index];
+
+        let idSuperior = "pSuperior" + index;
+        let PcolorSuperior = document.getElementById(idSuperior);
+
+        PcolorSuperior.style.backgroundColor = COLORFONDOATENUADO;
+        document.getElementById("casillafinal").style.opacity = "0.5";
+        document.getElementById("titulo").style.color = "rgb(255, 0, 0)";
+
+        let idinferior = "pinferior" + index;
+        let PcolorInferior = document.getElementById(idinferior);
+
+        PcolorInferior.style.backgroundColor = COLORFONDOATENUADO;
+      }
+    }
+    //funcion que va actualizando la hora de arriba a la derecha continuamente
+    function ActualizarHora() {
+      parrafoHora.innerText = new Date().toLocaleTimeString();
+      //parrafoSegundos.innerText = (new Date().getTime() - t1) / 1000 + " segundos";
+    }
+    //Funcion que Crea el div de la hora y le da estilo
+    function CrearHora() {
+      parrafoHora = document.getElementById("ParrafoHora");
+      parrafoHora.style.textAlign = "right";
+      parrafoHora.style.fontSize = "30px";
+      parrafoHora.style.fontWeight = "bold";
+      parrafoHora.style.margin = "0";
+      parrafoHora.style.position = "absolute";
+      parrafoHora.style.top = "20px";
+      parrafoHora.style.left = anchoDiv - 110 + "px";
+      document.getElementById("contenedorDiv").appendChild(parrafoHora);
+    }
+    //funcio que para la lectura de teclas
+    function RemoveListener() {
+      document.removeEventListener("keydown", LeerTecla);
+    }
+
+  </script>
+  <style>
+    body{
+      background-color: rgb(0, 0, 0);
+    }
+    h1 {
+      margin-top: 1px;
+      text-align: center;
+      color: rgb(246, 175, 167);
+    }
+
+    #boton {
+      margin-left: 45%;
+    }
+
+    #empezar {
+      margin-top: 0px;
+      padding-top: 300px;
+    }
+  </style>
+  <body>
+    <div id="contenedorDiv">
+      <div id="empezar">
+        <h1 id="titulo">JUEGO DEL COWBOY</h1>
+        <button id="boton">EmpezarJuego</button>
+      </div>
+      <p id="ParrafoHora"></p>
+    </div>
+  </body>
+</html>
